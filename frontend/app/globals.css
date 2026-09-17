@@ -95,6 +95,7 @@ canvas[data-context-lost="true"] { display: none !important; }
 .auth-modal { position: relative; width: min(100%, 420px); padding: 30px; border: 1px solid rgba(138, 239, 236, .36); background: linear-gradient(145deg, rgba(10, 32, 35, .97), rgba(18, 20, 38, .97)); box-shadow: 0 24px 90px rgba(0, 0, 0, .46), inset 0 0 28px rgba(138, 239, 236, .05); }
 .auth-modal h2 { margin: 14px 0 8px; color: #effcf8; font: 400 2rem/1 Georgia, serif; }
 .auth-copy { margin: 0 0 20px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.auth-error { margin: 10px 0 0; padding: 9px; border-left: 2px solid var(--coral); background: rgba(255, 94, 54, .08); color: #ffb2ba; font-size: 10px; line-height: 1.5; }
 .modal-close { position: absolute; top: 12px; right: 12px; display: grid; place-items: center; border: 0; background: transparent; color: var(--muted); padding: 6px; }
 .auth-tabs, .role-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
 .auth-tabs button, .role-picker button { border: 1px solid var(--line); background: rgba(3, 14, 16, .42); color: var(--muted); padding: 9px; font-size: 9px; letter-spacing: .12em; }

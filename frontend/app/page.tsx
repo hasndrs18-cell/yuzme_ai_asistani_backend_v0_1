@@ -16,6 +16,16 @@ export default function Home() {
   const [authOpen, setAuthOpen] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(() => {
     if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("access_token")) {
+      return {
+        name: params.get("profile_name") || "Google kullanıcısı",
+        email: params.get("profile_email") || "",
+        role: "athlete",
+        cssHistory: "1:32 / 100M",
+        performance: "Google hesabı bağlandı",
+      };
+    }
     const saved = window.localStorage.getItem("cyber-coach-profile");
     return saved ? JSON.parse(saved) as Profile : null;
   });
@@ -26,6 +36,13 @@ export default function Home() {
     const accessToken = params.get("access_token");
     if (accessToken) {
       window.localStorage.setItem("cyber-coach-access-token", accessToken);
+      window.localStorage.setItem("cyber-coach-profile", JSON.stringify({
+        name: params.get("profile_name") || "Google kullanıcısı",
+        email: params.get("profile_email") || "",
+        role: "athlete",
+        cssHistory: "1:32 / 100M",
+        performance: "Google hesabı bağlandı",
+      } satisfies Profile));
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);

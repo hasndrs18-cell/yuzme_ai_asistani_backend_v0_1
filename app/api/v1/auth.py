@@ -78,6 +78,12 @@ async def google_callback(request: Request, code: str | None = None, state: str 
     local_token = verifier.create_local_token(
         AuthenticatedUser(user_id=f"google:{user_id}", role=Role.STUDENT, student_id=f"google:{user_id}"),
     )
-    redirect = RedirectResponse(f"{settings.frontend_url}/?access_token={local_token}&auth_provider=google")
+    redirect_query = urlencode({
+        "access_token": local_token,
+        "auth_provider": "google",
+        "profile_name": str(profile.get("name", "Google kullanıcısı")),
+        "profile_email": str(profile.get("email", "")),
+    })
+    redirect = RedirectResponse(f"{settings.frontend_url}/?{redirect_query}")
     redirect.delete_cookie("google_oauth_state")
     return redirect

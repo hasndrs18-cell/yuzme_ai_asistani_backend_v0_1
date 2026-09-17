@@ -26,6 +26,7 @@ export default function AuthModal({ open, onClose, onAuthenticated }: AuthModalP
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [googleError, setGoogleError] = useState("");
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -42,8 +43,8 @@ export default function AuthModal({ open, onClose, onAuthenticated }: AuthModalP
   }
 
   function continueWithGoogle() {
-    const googleAuthUrl = process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL;
-    if (!googleAuthUrl) throw new Error("NEXT_PUBLIC_GOOGLE_AUTH_URL is not configured.");
+    setGoogleError("");
+    const googleAuthUrl = process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL || `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"}/api/v1/auth/google`;
     window.location.assign(googleAuthUrl);
   }
 
@@ -58,6 +59,7 @@ export default function AuthModal({ open, onClose, onAuthenticated }: AuthModalP
             <p className="auth-copy">{t.authBody}</p>
             <div className="auth-tabs"><button className={mode === "signin" ? "active" : ""} onClick={() => setMode("signin")}>{t.signIn}</button><button className={mode === "signup" ? "active" : ""} onClick={() => setMode("signup")}>{t.signUp}</button></div>
             <button className="google-button" type="button" onClick={continueWithGoogle}><Chrome size={16} /> {t.continueGoogle}</button>
+            {googleError && <p className="auth-error" role="alert">{googleError}</p>}
             <div className="auth-divider"><span /> OR <span /></div>
             <form onSubmit={submit}>
               {mode === "signup" && <input value={name} onChange={(event) => setName(event.target.value)} placeholder={t.fullName} autoComplete="name" />}
