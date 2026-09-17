@@ -10,7 +10,7 @@ const initialPosts: Post[] = [
 ];
 
 function googleLoginUrl() {
-  return process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL || "http://localhost:8000/api/v1/auth/google/login";
+  return process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL || `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/auth/google`;
 }
 
 export default function CommunityExperiencePanel() {
