@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Yüzme AI | WebSocket test istemcisi</title>
+  <style>
+    :root { color-scheme: dark; --bg: #101719; --panel: #172326; --line: #304247; --text: #edf5f2; --muted: #9ab0ac; --accent: #5de0bd; --warn: #ffcc70; --error: #ff887f; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(circle at 10% 0%, #21443f 0, transparent 38%), var(--bg); color: var(--text); font: 15px/1.5 ui-sans-serif, system-ui, sans-serif; }
+    main { width: min(960px, 100%); margin: 0 auto; padding: 40px 20px; }
+    h1 { margin: 0 0 6px; font-size: clamp(1.8rem, 4vw, 3rem); letter-spacing: 0; }
+    .intro, label, .hint { color: var(--muted); }
+    .intro { margin: 0 0 28px; }
+    .panel { border: 1px solid var(--line); background: rgba(23, 35, 38, .92); padding: 20px; border-radius: 8px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    label { display: grid; gap: 6px; font-size: .85rem; }
+    input, textarea, button { border: 1px solid var(--line); border-radius: 5px; background: #0f191b; color: var(--text); font: inherit; padding: 10px 12px; }
+    textarea { width: 100%; min-height: 90px; resize: vertical; margin-top: 14px; }
+    input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    button { cursor: pointer; background: var(--accent); color: #08221b; border-color: var(--accent); font-weight: 700; }
+    button.secondary { background: transparent; color: var(--text); }
+    button:disabled { cursor: not-allowed; opacity: .45; }
+    .status { display: flex; align-items: center; gap: 9px; margin-bottom: 16px; font-weight: 700; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--error); }
+    .dot.connected { background: var(--accent); }
+    .log { min-height: 260px; max-height: 460px; overflow: auto; margin: 18px 0 0; padding: 14px; background: #0b1112; border: 1px solid var(--line); border-radius: 5px; white-space: pre-wrap; word-break: break-word; font: 13px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .hint { margin: 12px 0 0; font-size: .85rem; }
+    @media (max-width: 650px) { main { padding: 24px 14px; } .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>WebSocket test istemcisi</h1>
+    <p class="intro">Phase 6-7 oturum, kilit ve rate-limit akışını izleyin.</p>
+    <section class="panel">
+      <div class="status"><span id="statusDot" class="dot"></span><span id="statusText">Bağlı değil</span></div>
+      <div class="grid">
+        <label>WebSocket adresi<input id="endpoint" value="/ws/chat" autocomplete="off"></label>
+        <label>Access token<input id="token" type="password" placeholder="Yerel token (gerekirse)" autocomplete="off"></label>
+      </div>
+      <textarea id="message" maxlength="4000" placeholder="Göndermek için mesaj yazın...">Merhaba, bugünkü yüzme antrenmanım için önerin nedir?</textarea>
+      <div class="actions">
+        <button id="connect">Bağlan</button>
+        <button id="send" disabled>Mesaj gönder</button>
+        <button id="end" class="secondary" disabled>Oturumu kapat</button>
+        <button id="clear" class="secondary">Günlüğü temizle</button>
+      </div>
+      <p class="hint">Token, tarayıcı kısıtı nedeniyle güvenli WebSocket header'ı yerine yalnızca yerel test için query parametresi olarak gönderilir.</p>
+      <pre id="log" class="log" aria-live="polite"></pre>
+    </section>
+  </main>
+  <script>
+    const endpoint = document.querySelector('#endpoint');
+    const token = document.querySelector('#token');
+    const message = document.querySelector('#message');
+    const log = document.querySelector('#log');
+    const statusText = document.querySelector('#statusText');
+    const statusDot = document.querySelector('#statusDot');
+    const connectButton = document.querySelector('#connect');
+    const sendButton = document.querySelector('#send');
+    const endButton = document.querySelector('#end');
+    let socket;
+
+    function writeLog(value, level = '') {
+      const line = `${new Date().toLocaleTimeString()}  ${typeof value === 'string' ? value : JSON.stringify(value, null, 2)}`;
+      const row = document.createElement('div');
+      row.textContent = line;
+      if (level === 'error') row.style.color = 'var(--error)';
+      if (level === 'warn') row.style.color = 'var(--warn)';
+      log.append(row);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function setConnected(connected) {
+      statusText.textContent = connected ? 'Bağlı' : 'Bağlı değil';
+      statusDot.classList.toggle('connected', connected);
+      sendButton.disabled = !connected;
+      endButton.disabled = !connected;
+      connectButton.disabled = connected;
+    }
+
+    connectButton.addEventListener('click', () => {
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const url = new URL(endpoint.value, `${protocol}//${location.host}`);
+      if (token.value.trim()) url.searchParams.set('access_token', token.value.trim());
+      writeLog(`Bağlanılıyor: ${url.pathname}`);
+      socket = new WebSocket(url);
+      socket.addEventListener('open', () => { setConnected(true); writeLog('Bağlantı açıldı.'); });
+      socket.addEventListener('message', event => {
+        try {
+          const payload = JSON.parse(event.data);
+          const level = payload.type === 'error' ? 'error' : '';
+          if (payload.code === 'RATE_LIMITED' || payload.code === 'CONCURRENT_REQUEST_LOCKED' || payload.code === 'RESOURCE_LOCKED') writeLog(payload, 'warn');
+          else writeLog(payload, level);
+        } catch { writeLog(event.data); }
+      });
+      socket.addEventListener('close', event => { setConnected(false); writeLog(`Bağlantı kapandı (kod: ${event.code}).`, event.code === 1013 ? 'warn' : ''); });
+      socket.addEventListener('error', () => writeLog('WebSocket bağlantı hatası; sunucu logunu ve tokenı kontrol edin.', 'error'));
+    });
+
+    sendButton.addEventListener('click', () => {
+      const text = message.value.trim();
+      if (!text || !socket || socket.readyState !== WebSocket.OPEN) return;
+      socket.send(JSON.stringify({ type: 'message.send', text }));
+      writeLog({ type: 'message.send', text });
+    });
+
+    endButton.addEventListener('click', () => {
+      if (socket && socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: 'session.end' }));
+    });
+    document.querySelector('#clear').addEventListener('click', () => { log.replaceChildren(); });
+  </script>
+</body>
+</html>
