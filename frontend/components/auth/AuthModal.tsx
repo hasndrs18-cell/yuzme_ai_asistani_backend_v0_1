@@ -44,11 +44,7 @@ export default function AuthModal({ open, onClose, onAuthenticated }: AuthModalP
 
   function continueWithGoogle() {
     setGoogleError("");
-    const googleAuthUrl = process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL || `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/auth/google`;
-    if (!process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL && !process.env.NEXT_PUBLIC_BACKEND_URL) {
-      setGoogleError("Google giriş adresi yapılandırılmamış. NEXT_PUBLIC_GOOGLE_AUTH_URL veya NEXT_PUBLIC_BACKEND_URL ekleyin.");
-      return;
-    }
+    const googleAuthUrl = process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL || `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"}/api/v1/auth/google`;
     window.location.assign(googleAuthUrl);
   }
 
