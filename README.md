@@ -30,6 +30,20 @@ RESEARCH_MAX_RESULTS=5
 
 Asistan araştırma bulgularını sistem prompt'una kaynak URL'siyle birlikte alır, çelişkileri ve sınırlılıkları belirtir. Sağlayıcı veya araştırma servisi yanıt vermezse sistem kaynak uydurmaz ve tahmin yürütmek yerine bunu kullanıcıya bildirir. Tıbbi, sakatlık ve yüksek riskli performans kararları yine antrenör/sağlık profesyoneli tarafından değerlendirilmelidir.
 
+## Vercel ve Google OAuth
+
+Bu repository'nin Vercel ayarı `vercel.json` ile `frontend` klasörünü Next.js uygulaması olarak build eder. FastAPI backend'i WebSocket ve OAuth callback kullandığı için Vercel frontend'inden ayrı bir backend servisi olarak yayınlanmalıdır.
+
+Vercel Project Settings > Environment Variables içine backend'in HTTPS adresiyle şu public değerleri ekleyin:
+
+```env
+NEXT_PUBLIC_BACKEND_URL=https://api.example.com
+NEXT_PUBLIC_WS_URL=wss://api.example.com/ws/chat
+NEXT_PUBLIC_GOOGLE_AUTH_URL=https://api.example.com/api/v1/auth/google
+```
+
+Backend servisine ise `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` ve `FRONTEND_URL` değerlerini ekleyin. Google Cloud Console'da Authorized redirect URI tam olarak `https://api.example.com/api/v1/auth/google/callback`, frontend origin de Vercel domain'i olmalıdır. Sadece frontend'i Vercel'e göndermek, `localhost:8000` üzerindeki backend'i internete açmaz.
+
 Health:
 
 ```text
