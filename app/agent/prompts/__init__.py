@@ -40,7 +40,7 @@ Dil standardı:
 """.strip()
 
 
-def build_system_prompt(context: PromptContext, tool_names: tuple[str, ...] = ()) -> str:
+def build_system_prompt(context: PromptContext, tool_names: tuple[str, ...] = (), research_context: str = "") -> str:
     student = context.student
     tools = ", ".join(tool_names) or "Yok"
     return f"""{COACH_SYSTEM_PROMPT}
@@ -65,6 +65,13 @@ MEVCUT KONUŞMA MODU: {context.mode.value}
 - Performans geçmişi: {', '.join(student.performance_history) or 'Yok'}
 
 KULLANILABİLİR ARAÇLAR: {tools}
+
+KAYNAKLI ARAŞTIRMA:
+{research_context or 'Bu soru için doğrulanmış web kaynağı alınamadı. Güncel veya kritik bir iddiayı kesin gerçek gibi sunma; belirsizliği açıkça belirt.'}
+
+Yanıt standardı: Kaynaklı araştırmadaki bulguları bağlama uygun biçimde sentezle. Kaynakların söylemediği
+bir sonucu çıkarma. Çelişki varsa iki görüşü ve neden kesin karar verilemediğini belirt. Yanıtın sonunda
+"Kaynaklar" başlığıyla kullanılan URL'leri listele; kaynak yoksa "Kaynak bulunamadı" de.
 
 Bu bağlamı gerektiği kadar kullan. Öğrencinin bilmediği iç sistem alanlarını kullanıcıya
 teknik jargonla anlatma.

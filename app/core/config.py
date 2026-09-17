@@ -9,6 +9,14 @@ class Settings(BaseSettings):
     environment: str = "development"
     log_level: str = "INFO"
     llm_provider: str = "mock"
+    llm_api_key: str = ""
+    llm_base_url: str = "https://api.openai.com/v1"
+    llm_model: str = "gpt-4o-mini"
+    llm_timeout_seconds: float = 20.0
+    research_provider: str = "none"
+    research_api_key: str = ""
+    research_timeout_seconds: float = 4.0
+    research_max_results: int = 5
     stt_provider: str = "mock"
     tts_provider: str = "mock"
     auth_secret: str = "development-only-change-me"

@@ -7,14 +7,16 @@ from app.agent.schemas import ConversationMode, Decision, DecisionType, IntentRe
 from app.agent.state import AgentState
 from app.agent.tools import SWIMMING_TOOLS
 from app.integrations.llm import LLMClient
+from app.integrations.research import ResearchProvider, ResearchResult
 from app.memory.context_builder import ContextBuilder
 
 
 class AgentNodes:
-    def __init__(self, context_builder: ContextBuilder, llm: LLMClient, tools: Sequence = SWIMMING_TOOLS) -> None:
+    def __init__(self, context_builder: ContextBuilder, llm: LLMClient, tools: Sequence = SWIMMING_TOOLS, research: ResearchProvider | None = None) -> None:
         self.context_builder = context_builder
         self.llm = llm
         self.tools = tuple(tools)
+        self.research = research
 
     async def load_context(self, state: AgentState) -> dict:
         context = await self.context_builder.build(
@@ -96,11 +98,24 @@ class AgentNodes:
 
     async def generate_response(self, state: AgentState) -> dict:
         context = PromptContext(student=state["student_context"], mode=state["mode"])
-        prompt = build_system_prompt(context, tuple(tool.name for tool in self.tools))
+        research_result = ResearchResult(question=state["user_message"], sources=(), confidence="LOW", contradiction_detected=False, limitation="Araştırma yapılmadı.")
+        if self.research is not None:
+            try:
+                research_result = await self.research.search(state["user_message"])
+            except Exception:
+                research_result = ResearchResult(question=state["user_message"], sources=(), confidence="LOW", contradiction_detected=False, limitation="Araştırma sağlayıcısına ulaşılamadı.")
+        research_context = "\n".join(
+            f"[{index}] {source.title} | {source.url}\nBulgu: {source.finding}"
+            for index, source in enumerate(research_result.sources, start=1)
+        )
+        prompt = build_system_prompt(context, tuple(tool.name for tool in self.tools), research_context)
         if state["decision"].type is DecisionType.ESCALATE_TO_COACH:
             response = "Burada kendi başıma kesin yönlendirme yapmak doğru olmaz. Antrenörünle veya uygun bir yetişkin/profesyonelle değerlendirelim."
         else:
-            response = await self.llm.generate(prompt, state["user_message"])
+            try:
+                response = await self.llm.generate(prompt, state["user_message"])
+            except Exception:
+                response = "AI sağlayıcısına şu anda ulaşılamıyor. Yanlış yönlendirme yapmamak için bu soruya tahminle cevap vermiyorum; lütfen biraz sonra tekrar deneyin."
         return {"response": response}
 
 

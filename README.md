@@ -13,6 +13,23 @@ pip install -e '.[test]'
 uvicorn app.main:app --reload
 ```
 
+## Kaynaklı AI yanıtları
+
+Varsayılan yapılandırma `mock` sağlayıcıdır ve gerçek bilgi iddiasında bulunmaz. Kaynaklı AI yanıtlarını açmak için proje kökünde `.env` oluşturun. LLM için OpenAI-uyumlu bir endpoint, web araştırması için Tavily kullanılabilir:
+
+```env
+LLM_PROVIDER=openai-compatible
+LLM_API_KEY=...
+LLM_BASE_URL=https://api.openai.com/v1
+LLM_MODEL=gpt-4o-mini
+RESEARCH_PROVIDER=tavily
+RESEARCH_API_KEY=...
+RESEARCH_TIMEOUT_SECONDS=4
+RESEARCH_MAX_RESULTS=5
+```
+
+Asistan araştırma bulgularını sistem prompt'una kaynak URL'siyle birlikte alır, çelişkileri ve sınırlılıkları belirtir. Sağlayıcı veya araştırma servisi yanıt vermezse sistem kaynak uydurmaz ve tahmin yürütmek yerine bunu kullanıcıya bildirir. Tıbbi, sakatlık ve yüksek riskli performans kararları yine antrenör/sağlık profesyoneli tarafından değerlendirilmelidir.
+
 Health:
 
 ```text

@@ -26,8 +26,9 @@ from app.core.auth import (
 from app.core.config import get_settings
 from app.core.lock import DistributedLockError, lock_manager
 from app.core.rate_limit import allow_websocket_request
-from app.integrations.llm import MockLLMClient
+from app.integrations.llm import MockLLMClient, OpenAICompatibleLLMClient
 from app.memory.context_builder import ContextBuilder
+from app.integrations.research import TavilyResearchProvider, UnconfiguredResearchProvider
 from app.session.manager import (
     SessionError,
     SessionManager,
@@ -41,10 +42,29 @@ router = APIRouter()
 
 _repository = InMemoryStudentRepository()
 _context_builder = ContextBuilder(_repository)
-_nodes = AgentNodes(_context_builder, MockLLMClient())
+_settings = get_settings()
+_llm = (
+    OpenAICompatibleLLMClient(
+        api_key=_settings.llm_api_key,
+        base_url=_settings.llm_base_url,
+        model=_settings.llm_model,
+        timeout_seconds=_settings.llm_timeout_seconds,
+    )
+    if _settings.llm_provider.lower() in {"openai", "openai-compatible"} and _settings.llm_api_key
+    else MockLLMClient()
+)
+_research = (
+    TavilyResearchProvider(
+        api_key=_settings.research_api_key,
+        timeout_seconds=_settings.research_timeout_seconds,
+        max_results=_settings.research_max_results,
+    )
+    if _settings.research_provider.lower() == "tavily" and _settings.research_api_key
+    else UnconfiguredResearchProvider()
+)
+_nodes = AgentNodes(_context_builder, _llm, research=_research)
 _checkpoint = WorkflowCheckpointFactory.get_checkpointer()
 _graph = create_workflow_graph(_nodes, checkpointer=_checkpoint)
-_settings = get_settings()
 _token_verifier = LocalTokenVerifier(
     secret=_settings.auth_secret,
     issuer=_settings.auth_issuer,
